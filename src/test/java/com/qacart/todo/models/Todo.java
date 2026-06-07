@@ -5,8 +5,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Todo {
+   // @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     @JsonProperty("isCompleted")
-    private boolean isCompleted;
+    private Boolean isCompleted;
    @JsonProperty("_id")
     private String  id;
     private String item;
@@ -20,7 +21,7 @@ public class Todo {
     {
 
     }
-    public Todo(boolean isCompleted,String item)
+    public Todo(Boolean isCompleted,String item)
     {
         this.isCompleted=isCompleted;
         this.item=item;
@@ -32,12 +33,12 @@ public class Todo {
 
     }
     @JsonProperty("isCompleted")
-    public boolean isCompleted() {
+    public Boolean getIsCompleted() {
         return isCompleted;
     }
 
     @JsonProperty("isCompleted")
-    public void setIsCompleted(boolean completed) {
+    public void setIsCompleted(Boolean completed) {
         isCompleted = completed;
     }
 

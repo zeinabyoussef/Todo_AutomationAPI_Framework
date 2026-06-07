@@ -1,10 +1,17 @@
 package com.qacart.todo.testcases;
 
+import com.qacart.todo.apis.TodoApi;
+import com.qacart.todo.data.ErrorMessage;
+import com.qacart.todo.models.Error;
 import com.qacart.todo.models.Todo;
+import com.qacart.todo.steps.TodoSteps;
+import com.qacart.todo.steps.UserSteps;
 import io.restassured.http.ContentType;
+import io.restassured.response.Response;
 import org.testng.annotations.Test;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
 public class TodoTest {
@@ -12,7 +19,7 @@ public class TodoTest {
     @Test
     public void shouldBeAbleToAddTodo()
     {
-        String token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMjQ4NzA1Njg3MTdhMDAxNTI2ZWY0NCIsImZpcnN0TmFtZSI6InphaW5hYiIsImxhc3ROYW1lIjoieW91c3NlZiIsImlhdCI6MTc4MDc4MDU0Mn0.GVu8OVFK06ThQyzS9S4mrEEMzZClVx0DZi3fHGzTYzM";
+        String token= UserSteps.getUserToken();
         /*
         String body = "{\n" +
                 "    \"isCompleted\": false,\n" +
@@ -20,74 +27,61 @@ public class TodoTest {
                 "}";
 
          */
-        Todo todo=new Todo(false,"learn Appium");
+        Todo todo= TodoSteps.generateTodo();
 
-        given()
-                .baseUri("https://qacart-todo.herokuapp.com")
-                .body(todo)
-                .contentType(ContentType.JSON)
-                .auth().oauth2(token)
-                .when().post("api/v1/tasks")
-                .then()
-                .log().all()
-                .assertThat().statusCode(201)
-                .assertThat().body("item",equalTo("learn Appium"))
-                .assertThat().body("isCompleted",equalTo(false));
+        Response response= TodoApi.addTodo(todo,token);
+        Todo returnedTodo=response.body().as(Todo.class);
+
+        assertThat(response.statusCode(),equalTo(201));
+        assertThat(returnedTodo.getItem(),equalTo(todo.getItem()));
+        assertThat(returnedTodo.getIsCompleted(),equalTo(false));
+
+
     }
     @Test
     public void shouldNotBeAbleToAddTodoIfIsCompletedIsMissing()
     {
-        String token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMjQ4NzA1Njg3MTdhMDAxNTI2ZWY0NCIsImZpcnN0TmFtZSI6InphaW5hYiIsImxhc3ROYW1lIjoieW91c3NlZiIsImlhdCI6MTc4MDc4MDU0Mn0.GVu8OVFK06ThQyzS9S4mrEEMzZClVx0DZi3fHGzTYzM";
-       /* String body = "{\n" +
+        String token= UserSteps.getUserToken();       /* String body = "{\n" +
                 "    \"item\": \"learn Appium\"\n" +
                 "}";
 
         */
         Todo todo=new Todo("learn Appium");
-        given()
-                .baseUri("https://qacart-todo.herokuapp.com")
-                .body(todo)
-                .contentType(ContentType.JSON)
-                .auth().oauth2(token)
-                .when().post("api/v1/tasks")
-                .then()
-                .log().all()
-                .assertThat().statusCode(400)
-                .assertThat().body("message",equalTo("\"isCompleted\" is required"));
+        Response response= TodoApi.addTodo(todo,token);
+        //Todo returnedTodo=response.body().as(Todo.class);
+        Error returnedError=response.body().as(Error.class);
+
+        assertThat(response.statusCode(),equalTo(400));
+        assertThat(returnedError.getMessage(),equalTo(ErrorMessage.COMPLETED_REQUIRED));
+
 
 }
     @Test
     public void shouldBeAbleToGetATodoByID()
     {
-        String token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMjQ4NzA1Njg3MTdhMDAxNTI2ZWY0NCIsImZpcnN0TmFtZSI6InphaW5hYiIsImxhc3ROYW1lIjoieW91c3NlZiIsImlhdCI6MTc4MDc4MDU0Mn0.GVu8OVFK06ThQyzS9S4mrEEMzZClVx0DZi3fHGzTYzM";
-        given()
-                .baseUri("https://qacart-todo.herokuapp.com")
-                .contentType(ContentType.JSON)
-                .auth().oauth2(token)
-                .when().get("api/v1/tasks/6a24977b68717a001526f018")
-                .then()
-                .log().all()
-                .assertThat().statusCode(200)
-                .assertThat().body("item",equalTo("learn Appium"))
-                .assertThat().body("isCompleted",equalTo(false));
+
+        String token= UserSteps.getUserToken();
+
+        Response response= TodoApi.getTodo(token);
+        Todo returnedTodo=response.body().as(Todo.class);
+
+
+        assertThat(response.statusCode(),equalTo(200));
+        assertThat(returnedTodo.getItem(),equalTo("learn Appium"));
+        assertThat(returnedTodo.getIsCompleted(),equalTo(false));
+
+
     }
     @Test
-    public void shouldBeAbleToDeleteATodoByID()
-    {
-        String token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMjQ4NzA1Njg3MTdhMDAxNTI2ZWY0NCIsImZpcnN0TmFtZSI6InphaW5hYiIsImxhc3ROYW1lIjoieW91c3NlZiIsImlhdCI6MTc4MDc4MDU0Mn0.GVu8OVFK06ThQyzS9S4mrEEMzZClVx0DZi3fHGzTYzM";
-        given()
-                .baseUri("https://qacart-todo.herokuapp.com")
-                .contentType(ContentType.JSON)
-                .auth().oauth2(token)
-                .when().delete("api/v1/tasks/6a24977b68717a001526f018")
-                .then()
-                .log().all()
-                .assertThat().statusCode(200)
-                .assertThat().body("item",equalTo("learn Appium"))
-                .assertThat().body("isCompleted",equalTo(false));
+    public void shouldBeAbleToDeleteATodoByID() {
+        String token= UserSteps.getUserToken();        Response response= TodoApi.deleteTodo(token);
+
+        Todo returnedTodo=response.body().as(Todo.class);
+        assertThat(response.statusCode(), equalTo(200));
+        assertThat(returnedTodo.getItem(), equalTo("learn Appium"));
+        assertThat(returnedTodo.getIsCompleted(), equalTo(false));
+
+
     }
 
-
-
-
-}
+    }

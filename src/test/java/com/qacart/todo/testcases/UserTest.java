@@ -1,10 +1,16 @@
 package com.qacart.todo.testcases;
 
+import com.qacart.todo.apis.UserApi;
+import com.qacart.todo.data.ErrorMessage;
+import com.qacart.todo.models.Error;
 import com.qacart.todo.models.User;
+import com.qacart.todo.steps.UserSteps;
 import io.restassured.http.ContentType;
+import io.restassured.response.Response;
 import org.testng.annotations.Test;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 
@@ -24,18 +30,14 @@ public class UserTest {
 
        */
         //معني ال serialization انها تحول ال java object to JSON
-        User user=new User("zainab","youssef","zeinab123@gmail.com","ywbna123");
+                // String randomEmail = "zainab" + System.currentTimeMillis() + "@gmail.com";
+                User user= UserSteps.generateUser();
+                 Response response= UserApi.register(user);
 
-        given()
-                .baseUri("https://qacart-todo.herokuapp.com")
-                .contentType(ContentType.JSON)
-                .body(user)
-                .when().post("/api/v1/users/register")
-                .then()
+                User returnedUser=response.body().as(User.class);
 
-                .log().all()
-                .assertThat().statusCode(201)
-                .assertThat().body("firstName",equalTo("zainab"));
+                assertThat(response.statusCode(),equalTo(201));
+                assertThat(returnedUser.getFirstName(), equalTo(user.getFirstName()));
     }
 
     @Test
@@ -50,19 +52,13 @@ public class UserTest {
                 "}";
 
         */
-        User user=new User("zainab","youssef","zeinab123@gmail.com","ywbna123");
+        User user=UserSteps.getRegisteredUser();
+        Response response= UserApi.register(user);
 
+        Error returnedError=response.body().as(Error.class);
+        assertThat(response.statusCode(),equalTo(400));
+        assertThat(returnedError.getMessage(),equalTo(ErrorMessage.EMAIL_ALREADY_REGISTERED));
 
-        given()
-                .baseUri("https://qacart-todo.herokuapp.com")
-                .contentType(ContentType.JSON)
-                .body(user)
-                .when().post("/api/v1/users/register")
-                .then()
-
-                .log().all()
-                .assertThat().statusCode(400)
-                .assertThat().body("message",equalTo("Email is already exists in the Database"));
 
     }
     @Test
@@ -75,19 +71,16 @@ public class UserTest {
                 "}";
 
        */
-        User user=new User("zeinab123@gmail.com","ywbna123");
+        User user=UserSteps.getRegisteredUser();
+        User loginData=new User(user.getEmail(),user.getPassword());
+        Response response= UserApi.login(loginData);
 
-        given()
-                .baseUri("https://qacart-todo.herokuapp.com")
-                .contentType(ContentType.JSON)
-                .body(user)
-                .when().post("/api/v1/users/login")
-                .then()
 
-                .log().all()
-                .assertThat().statusCode(200)
-                .assertThat().body("firstName",equalTo("zainab"))
-                .assertThat().body("access_token",not(equalTo(null)));
+        User returnedUser=response.body().as(User.class);
+        assertThat(response.statusCode(),equalTo(200));
+        assertThat(returnedUser.getFirstName(),equalTo(user.getFirstName()));
+        assertThat(returnedUser.getAccess_token(),not(equalTo(null)));
+
 
     }
     @Test
@@ -100,18 +93,14 @@ public class UserTest {
                 "}";
 
        */
-        User user=new User("zeinab123@gmail.com","wrongpass123");
+        User user=UserSteps.getRegisteredUser();
+        User loginData=new User(user.getEmail(),"WrongPassword");
+        Response response= UserApi.login(loginData);
 
-        given()
-                .baseUri("https://qacart-todo.herokuapp.com")
-                .contentType(ContentType.JSON)
-                .body(user)
-                .when().post("/api/v1/users/login")
-                .then()
+        Error returnedError=response.body().as(Error.class);
+        assertThat(response.statusCode(),equalTo(401));
+        assertThat(returnedError.getMessage(),equalTo(ErrorMessage.WRONG_LOGIN));
 
-                .log().all()
-                .assertThat().statusCode(401)
-                .assertThat().body("message",equalTo("The email and password combination is not correct, please fill a correct email and password"));
 
 
     }
